@@ -1,5 +1,13 @@
 import 'package:Nanonura_Dart_Server/unicolor.dart';
 
+class Led {
+  UniColor color;
+
+  Led(this.color);
+
+  Led.off() : this(UniColors.black);
+}
+
 abstract class Show {
   bool active = false;
 
@@ -30,6 +38,11 @@ class Curve {
     addMarker(1.0, 0.0);
   }
 
+  Curve.fadeOff() {
+    addMarker(0.0, 1.0);
+    addMarker(1.0, 0.0);
+  }
+
   void addMarker(double progress, double value) {
     if (progress < 0 || progress > 1) {
       throw ArgumentError.value(
@@ -47,23 +60,42 @@ class Curve {
       return 0;
     }
     for (int i = 0; i < _markers.length; i++) {
-      if (_markers[i].object > progress) {
+      if (_markers[i].elapsedSeconds > progress) {
         if (i == 0) {
           //Before first marker.
-          return _markers.first.object;
+          return 0;
         }
 
         //Between two markers.
-        (progress - _markers[i-1].object) / (_markers[i].object - _markers[i-1].object);
+        double innerProgress = (progress - _markers[i-1].elapsedSeconds) /
+            (_markers[i].elapsedSeconds - _markers[i-1].elapsedSeconds);
+        return _markers[i-1].object + (_markers[i].object - _markers[i-1].object) * innerProgress;
       }
     }
 
     //After last marker.
-    return _markers.last.object;
+    return 0;
   }
 }
 
-class Gradient {
+class Lup {
+  Led led;
+  UniColor color;
+  Curve curve;
+  double progress = 0;
+  double duration;
+  bool get done => progress > duration;
+
+  Lup(this.led, this.color, this.curve, this.duration);
+
+  void update(double elapsedSeconds) {
+    progress += elapsedSeconds;
+    //led.color = UniColor.lerp(led.color, color * curve.calculate(progress / duration), progress/duration);
+    led.color = UniColor.lerp(led.color, color, curve.calculate(progress / duration));
+  }
+}
+
+/*class Gradient {
   List<Marker<UniColor>> _markers = [];
 
   Gradient();
@@ -111,4 +143,4 @@ class Gradient {
     //After last marker.
     return _markers.last.object;
   }
-}
+}*/
